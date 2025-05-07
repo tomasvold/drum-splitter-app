@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Toms Drum Splitter</title>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+  font-family: 'Open Sans', sans-serif; /* A clean and readable sans-serif */
+  background-color: #f7f7f7; /* Light gray background */
+  color: #333; /* Dark text for contrast */
+  text-align: center;
+  padding: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+}
+
+h1 {
+  font-size: 3.5rem;
+  margin-bottom: 25px;
+  color: #222;
+}
+
+p {
+  font-size: 1.3rem;
+  margin-bottom: 40px;
+  color: #555;
+  max-width: 600px;
+  line-height: 1.6;
+}
+
+form {
+  margin-top: 40px;
+  padding: 30px;
+  background-color: #fff; /* White form background */
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  border: 1px solid #eee; /* Light border */
+}
+
+input[type="file"] {
+  padding: 15px;
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #eee;
+  color: #333;
+  font-size: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+button {
+  padding: 14px 28px;
+  font-size: 1.1rem;
+  background-color: #007bff; /* A modern blue for the button */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #0056b3; /* Darker blue on hover */
+}
+
+.message {
+  margin-top: 30px;
+  font-size: 1.1rem;
+  color: #777;
+}
+
+.spinner {
+  display: none;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+  </style>
+</head>
+<body>
+  <h1>Welcome to Tom's Drum Splitter</h1>
+  <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+    <input type="file" name="audio" required>
+    <br>
+    <button type="submit">Upload and Split</button>
+  </form>
+
+  <div class="spinner" id="spinner"></div>
+  <div class="message" id="message">⏳ Please select a drum track to upload..</div>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    const spinner = document.getElementById('spinner');
+    const message = document.getElementById('message');
+    let phase = 0;
+
+    const messages = ['Uploading...', 'Processing...', 'Almost done...'];
+
+    form.addEventListener('submit', (e) => {
+      // Show spinner and initial message
+      spinner.style.display = 'block';
+      message.style.display = 'block';
+      message.innerText = messages[phase];  // Show "Uploading..."
+
+      // Update message every 2.5 seconds during processing
+      const interval = setInterval(() => {
+        phase = (phase + 1) % messages.length;
+        message.innerText = messages[phase];
+      }, 2500);
+
+      // Stop the interval after form submission completes (handled by Flask)
+      form.addEventListener('load', () => clearInterval(interval));
+    });
+  </script>
+</body>
+</html>
