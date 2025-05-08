@@ -109,7 +109,7 @@ def get_job_status(job_id):
         print(f"🔎 Checking status for job ID: {job_id}")
         job_info = client.get_job(job_id=job_id) # Non-blocking call
         print(f"ℹ️ Status for job {job_id}: {job_info.get('status')}")
-        # print(json.dumps(job_info, indent=2)) # For verbose debugging
+        print(json.dumps(job_info, indent=2)) # For verbose debugging
 
         status = job_info.get('status')
         response_data = {"job_id": job_id, "status": status}
