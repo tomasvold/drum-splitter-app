@@ -4,61 +4,236 @@
   <meta charset="UTF-8">
   <title>AI Drum Stem Separator</title>
   <meta name="robots" content="noindex, nofollow">
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    /* Basic styles for message and spinner, can be enhanced in style.css */
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border-left-color: #09f;
+      animation: spin 1s ease infinite;
+      display: none; /* Hidden by default */
+      margin: 20px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .message {
+      margin-top: 10px;
+      font-size: 1em;
+      color: #333;
+      text-align: center;
+    }
+    .error-message {
+        color: #c0392b; /* Red for errors */
+        font-weight: bold;
+    }
+    .success-message {
+        color: #27ae60; /* Green for success */
+        font-weight: bold;
+    }
+    /* Ensure form elements are stacked nicely on smaller screens */
+    form input[type="text"], form input[type="file"], form button {
+        display: block;
+        width: calc(100% - 22px); /* Full width minus padding/border */
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+    form button {
+        background-color: #3498db;
+        color: white;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+    form button:hover {
+        background-color: #2980b9;
+    }
+    .logo {
+      display: block;
+      margin: 20px auto;
+      max-width: 200px; /* Adjust as needed */
+      height: auto;
+    }
+    .container { /* Added a container for better centering and responsiveness */
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+     footer {
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+        font-size: 0.9em;
+        color: #777;
+    }
+    .social-links a {
+        color: #3498db;
+        text-decoration: none;
+        margin: 0 5px;
+    }
+    .social-links a:hover {
+        text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
-  <img src="{{ url_for('static', filename='Logo.png') }}" alt="Drum Splitter Logo" class="logo">
-  <p>Upload your stereo drum track and let our AI split it into individual stems (kick, snare, toms, cymbals, hihat)</p>
-  
-  <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
-    Enter credentials:
-    <input type="text" name="api_key" placeholder="Enter your API key" required>
-    <input type="text" name="workflow" placeholder="Enter your Workflow slug" required>
-    <p></p>
-    <input type="file" name="audio" required>
-    <button type="submit">Upload and Split</button>
-  </form>
+  <div class="container">
+    <img src="{{ url_for('static', filename='Logo.png') }}" alt="Drum Splitter Logo" class="logo">
+    <p>Upload your stereo drum track and let our AI split it into individual stems (kick, snare, toms, cymbals, hihat).</p>
+    
+    <form id="uploadForm"> Enter credentials:
+      <input type="text" name="api_key" id="api_key" placeholder="Enter your API key" required>
+      <input type="text" name="workflow" id="workflow" placeholder="Enter your Workflow slug" required>
+      <p></p>
+      <input type="file" name="audio" id="audio_file" required>
+      <button type="submit">Upload and Split</button>
+    </form>
 
-  <div class="spinner" id="spinner"></div>
-  <div class="message" id="message">⏳ Please select a drum track to upload..</div>
+    <div class="spinner" id="spinner"></div>
+    <div class="message" id="messageArea">⏳ Please select a drum track to upload..</div>
+  </div>
+
+  <footer>
+    <p>
+      Created by Tom Åsvold 2025, Los Angeles CA<br>
+      <span class="social-links">
+        <a href="https://www.instagram.com/tomasvold" target="_blank">Instagram</a> | 
+        <a href="https://www.facebook.com/tomasvold" target="_blank">Facebook</a> | 
+        <a href="https://www.linkedin.com/in/tomasvold" target="_blank">LinkedIn</a>
+      </span>
+    </p>
+  </footer>
 
   <script>
-    const form = document.getElementById('uploadForm');
+    const uploadForm = document.getElementById('uploadForm');
     const spinner = document.getElementById('spinner');
-    const message = document.getElementById('message');
-    let phase = 0;
+    const messageArea = document.getElementById('messageArea');
+    const apiKeyInput = document.getElementById('api_key'); // Get API key input
+    
+    let pollingInterval; // To store the interval ID for polling
 
-    const messages = ['Uploading...', 'Processing...', 'Almost done...'];
+    // Function to update messages shown to the user
+    function showMessage(text, type = 'info') {
+        messageArea.innerText = text;
+        messageArea.className = 'message'; // Reset class
+        if (type === 'error') {
+            messageArea.classList.add('error-message');
+        } else if (type === 'success') {
+            messageArea.classList.add('success-message');
+        }
+    }
 
-    form.addEventListener('submit', (e) => {
-      // Show spinner and initial message
+    uploadForm.addEventListener('submit', async (event) => {
+      event.preventDefault(); // Prevent default form submission
+
       spinner.style.display = 'block';
-      message.style.display = 'block';
-      message.innerText = messages[phase];  // Show "Uploading..."
+      showMessage('🚀 Uploading file and creating job...', 'info');
+      uploadForm.querySelector('button[type="submit"]').disabled = true;
 
-      // Update message every 2.5 seconds during processing
-      const interval = setInterval(() => {
-        phase = (phase + 1) % messages.length;
-        message.innerText = messages[phase];
-      }, 2500);
 
-      // Stop the interval after form submission completes (handled by Flask)
-      form.addEventListener('load', () => clearInterval(interval));
+      const formData = new FormData(uploadForm);
+      const userApiKey = formData.get('api_key'); // Get API key for later use in polling
+
+      if (!userApiKey) {
+          showMessage('API Key is required!', 'error');
+          spinner.style.display = 'none';
+          uploadForm.querySelector('button[type="submit"]').disabled = false;
+          return;
+      }
+
+      try {
+        const response = await fetch("{{ url_for('upload_file_and_create_job') }}", {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          // Handle HTTP errors from the /upload endpoint
+          throw new Error(data.error || `Server error: ${response.status}`);
+        }
+
+        if (data.job_id) {
+          showMessage(`⏳ Job created (ID: ${data.job_id}). Now polling for status...`, 'info');
+          pollJobStatus(data.job_id, userApiKey); // Pass userApiKey to polling function
+        } else {
+          throw new Error(data.error || 'Failed to create job: No Job ID received.');
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        showMessage(`Error: ${error.message}`, 'error');
+        spinner.style.display = 'none';
+        uploadForm.querySelector('button[type="submit"]').disabled = false;
+      }
     });
+
+    async function pollJobStatus(jobId, apiKeyForPolling) {
+      // Clear any existing polling interval
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+
+      pollingInterval = setInterval(async () => {
+        try {
+          // Construct the URL for job status, including the API key as a query parameter
+          const statusUrl = `{{ url_for('get_job_status', job_id='JOB_ID_PLACEHOLDER') }}`.replace('JOB_ID_PLACEHOLDER', jobId) + `?api_key=${encodeURIComponent(apiKeyForPolling)}`;
+          
+          const response = await fetch(statusUrl);
+          const data = await response.json();
+
+          if (!response.ok) {
+            // Handle HTTP errors from the /job_status endpoint
+            throw new Error(data.error || `Server error checking status: ${response.status}`);
+          }
+          
+          showMessage(`⏳ Job Status (${jobId}): ${data.status || 'Unknown'}`, 'info');
+
+          if (data.status === 'SUCCEEDED') {
+            clearInterval(pollingInterval);
+            spinner.style.display = 'none';
+            uploadForm.querySelector('button[type="submit"]').disabled = false;
+            if (data.outputs) {
+              showMessage('🎉 Job completed successfully! Redirecting to results...', 'success');
+              // Redirect to the results page, passing the API key
+              window.location.href = `{{ url_for('show_results', job_id='JOB_ID_PLACEHOLDER') }}`.replace('JOB_ID_PLACEHOLDER', jobId) + `?api_key=${encodeURIComponent(apiKeyForPolling)}`;
+            } else {
+              showMessage('✅ Job completed, but no output stems were found. Please check the workflow or input file.', 'info');
+              // Optionally, redirect to a results page that can display this message
+               window.location.href = `{{ url_for('show_results', job_id='JOB_ID_PLACEHOLDER') }}`.replace('JOB_ID_PLACEHOLDER', jobId) + `?api_key=${encodeURIComponent(apiKeyForPolling)}`;
+            }
+          } else if (data.status === 'FAILED') {
+            clearInterval(pollingInterval);
+            spinner.style.display = 'none';
+            uploadForm.querySelector('button[type="submit"]').disabled = false;
+            showMessage(`❌ Job failed: ${data.error_details || data.message || 'Unknown error'}`, 'error');
+          } else if (data.status === 'QUEUED' || data.status === 'STARTED') {
+            // Continue polling
+            showMessage(`⏳ Job processing... Status: ${data.status}`, 'info');
+          } else if (!data.status) {
+             // Unknown status or error in response
+             console.warn("Received unexpected job status data:", data);
+          }
+
+        } catch (error) {
+          console.error('Polling error:', error);
+          showMessage(`Error polling job status: ${error.message}`, 'error');
+          clearInterval(pollingInterval); // Stop polling on error
+          spinner.style.display = 'none';
+          uploadForm.querySelector('button[type="submit"]').disabled = false;
+        }
+      }, 5000); // Poll every 5 seconds (adjust as needed)
+    }
   </script>
-
-
-<footer>
-  <p>
-    Created by Tom Åsvold 2025, Los Angeles CA</br>
-    <span class="social-links">
-      <a href="https://www.instagram.com/tomasvold" target="_blank">Instagram</a> | 
-      <a href="https://www.facebook.com/tomasvold" target="_blank">Facebook</a> | 
-      <a href="https://www.linkedin.com/in/tomasvold" target="_blank">LinkedIn</a>
-    </span>
-  </p>
-</footer>
-
 </body>
 </html>
