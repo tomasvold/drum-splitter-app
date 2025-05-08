@@ -55,10 +55,12 @@ def upload():
         status = "QUEUED"
         while status not in ["SUCCEEDED", "FAILED"]:
             time.sleep(2)
-            response = requests.get(
-                f"https://api.music.ai/api/job/{job_id}",
-                headers=headers
-            )
+            poll_url = f"https://api.music.ai/api/job/{job_id}"
+            print(f"➡️ Polling URL: {poll_url}")
+            print(f"➡️ Polling Headers: {headers}")
+            response = requests.get(poll_url, headers=headers)
+            print(f"⬅️ Polling Status Code: {response.status_code}")
+            print(f"⬅️ Polling Response Text: {response.text}")  # <--- HERE
             if response.status_code != 200:
                 print("Failed to poll job status:", response.text)
                 return f"Polling error: {response.text}", 500
