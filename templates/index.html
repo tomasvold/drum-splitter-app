@@ -10,9 +10,13 @@
 <body>
   <img src="{{ url_for('static', filename='Logo.png') }}" alt="Drum Splitter Logo" class="logo">
   <p>Upload your stereo drum track and let our AI split it into individual stems (kick, snare, toms, cymbals, hihat)</p>
+  
   <form id="uploadForm" action="/upload" method="post" enctype="multipart/form-data">
+    Enter credentials:
+    <input type="text" name="api_key" placeholder="Enter your API key" required>
+    <input type="text" name="workflow" placeholder="Enter your Workflow slug" required>
+    <p></p>
     <input type="file" name="audio" required>
-    <br>
     <button type="submit">Upload and Split</button>
   </form>
 
@@ -43,6 +47,7 @@
       form.addEventListener('load', () => clearInterval(interval));
     });
   </script>
+
 
 <footer>
   <p>

@@ -7,16 +7,22 @@ from musicai_sdk import MusicAiClient
 load_dotenv()
 
 app = Flask(__name__)
-MUSIC_AI_API_KEY = os.getenv("MUSIC_AI_API_KEY")
-client = MusicAiClient(api_key=MUSIC_AI_API_KEY)
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
 @app.route('/upload', methods=['POST'])
-@app.route('/upload', methods=['POST'])
 def upload():
+    # Get user-provided credentials
+    api_key = request.form.get('api_key')
+    workflow = request.form.get('workflow')
+
+    if not api_key or not workflow:
+        return "Missing API key or workflow", 400
+
+    client = MusicAiClient(api_key=api_key)
+
     file = request.files.get('audio')
     if not file:
         return "No file uploaded", 400
@@ -33,8 +39,8 @@ def upload():
 
         # Create a job
         job_info = client.create_job(
-            job_name="AI Audio Mastering",
-            workflow_id="ai-audio-mastering",
+            job_name="Drum Stem Separation",
+            workflow_id=workflow,
             params={"inputUrl": file_url}
         )
         job_id = job_info['id']
