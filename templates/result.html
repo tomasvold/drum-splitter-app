@@ -6,17 +6,46 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <h1>Separation Complete 🎉</h1>
-  <p>Click a stem below to listen or download:</p>
-  <ul>
-    {% for stem, url in stems.items() %}
-      <li>
-        <strong>{{ stem.replace('_', ' ').title() }}:</strong>
-        <audio controls src="{{ url }}"></audio>
-        <a href="{{ url }}" download>⬇ Download</a>
-      </li>
-    {% endfor %}
-  </ul>
+  <h1>Separation Result</h1> {% if job_status == "SUCCEEDED" and stems %}
+    {# This is the ideal case: job succeeded and we have stems #}
+    <p>Separation Complete! 🎉</p>
+    <p>Click a stem below to listen or download:</p>
+    <ul>
+      {% for stem_key, url in stems.items() %}
+        <li>
+          <strong>{{ stem_key.replace('_', ' ').title() }}:</strong>
+          <audio controls src="{{ url }}"></audio>
+          <a href="{{ url }}" download>⬇ Download</a>
+        </li>
+      {% else %}
+        {# This 'else' for the for-loop handles if stems is an empty dictionary #}
+        <li>No stems were found in the result.</li>
+      {% endfor %}
+    </ul>
+  {% elif job_status == "SUCCEEDED_NO_OUTPUTS" %}
+    {# Job succeeded according to the API, but our app couldn't find/process the output URLs #}
+    <p>✅ The job completed successfully on the platform, but no output stems were found or processed by the application.</p>
+    {% if error_info %}
+      <p>Details: {{ error_info }}</p>
+    {% endif %}
+     <p>Please check the workflow configuration on music.ai or try a different audio file.</p>
+  {% elif job_status == "FAILED" %}
+    {# Job explicitly failed #}
+    <p>😢 Unfortunately, the separation job failed.</p>
+    {% if error_info %}
+      <p>Details: {{ error_info }}</p>
+    {% else %}
+      <p>No specific error details were provided by the music.ai service.</p>
+    {% endif %}
+  {% else %}
+    {# Catch-all for other statuses or unexpected situations #}
+    <p>Job Status: {{ job_status }}</p>
+    <p>Something unexpected happened. Please try again or check the logs.</p>
+    {% if error_info %}
+      <p>Details: {{ error_info }}</p>
+    {% endif %}
+  {% endif %}
+
   <br>
   <a href="/">⬅ Back to Upload</a>
 </body>

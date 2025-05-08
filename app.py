@@ -73,6 +73,8 @@ def upload():
         print(f"✔️ Job {job_id} finished with status: {status}")
 
         if status == "SUCCEEDED":
+            print(f"🔍 Full completed_job_info for {job_id} (Status: {status}):")
+            print(json.dumps(completed_job_info, indent=2))
             outputs = completed_job_info.get("result", {}).get("outputs")
             if outputs:
                 print("✅ Job completed. Outputs:")
