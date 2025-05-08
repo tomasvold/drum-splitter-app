@@ -73,31 +73,8 @@ def upload_file_and_create_job():
 
 @app.route('/job_status/<job_id>', methods=['GET'])
 def get_job_status(job_id):
-    # It's important to re-initialize the client or ensure it's available.
-    # For simplicity here, we'll assume API key might need to be passed or stored securely if needed across requests.
-    # However, the SDK client itself is stateless for get_job if initialized with an API key.
-    # For a production app, you'd handle API key management more robustly (e.g., session, secure config).
-    # For this example, we'll assume the client can be re-initialized if needed,
-    # or that the API key used for job creation is implicitly available/not strictly tied to this status check call by music.ai.
-    # The MusicAiClient is typically initialized with an API key that's used for all its requests.
-    # We need an API key to initialize the client to check the status.
-    # This is a simplification; in a real app, you'd securely manage how the API key is available for this.
-    # One way is to require the API key again, or use a server-side stored key if this app has its own MusicAI account.
-    # Since the user provides the API key, we'll need it.
-    # This example assumes the client-side will pass it or it's configured server-side.
-    # For now, let's assume we need to get it from a query param for this example,
-    # or better, it should be part of a secure session or server configuration.
-    
-    # A more robust way would be to store the api_key used for the job creation associated with the job_id,
-    # or have a global API key for the app if that's the model.
-    # For this iteration, we'll just re-initialize with a placeholder.
-    # THIS IS A SIMPLIFICATION AND LIKELY NEEDS THE ACTUAL API KEY.
-    # The client that calls this /job_status endpoint would need to provide the API key.
-    # Let's assume the client sends it as a header or query parameter for this check.
-    
-    api_key = request.args.get('api_key') # Or request.headers.get('X-API-Key')
+    api_key = request.args.get('api_key') 
     if not api_key:
-        # Fallback to an environment variable if this app has its own key for status checks
         api_key = os.environ.get('MUSIC_AI_APP_API_KEY') 
     
     if not api_key:
@@ -107,21 +84,29 @@ def get_job_status(job_id):
 
     try:
         print(f"🔎 Checking status for job ID: {job_id}")
-        job_info = client.get_job(job_id=job_id) # Non-blocking call
+        job_info = client.get_job(job_id=job_id) 
         print(f"ℹ️ Status for job {job_id}: {job_info.get('status')}")
-        print(json.dumps(job_info, indent=2)) # For verbose debugging
+        
+        # This is where we log the full JSON if needed for debugging
+        # print(json.dumps(job_info, indent=2)) 
 
         status = job_info.get('status')
         response_data = {"job_id": job_id, "status": status}
 
         if status == "SUCCEEDED":
-            outputs = job_info.get("result", {}).get("outputs")
-            if outputs:
+            # CORRECTED LINE: Get the 'result' object directly
+            outputs = job_info.get("result") 
+            
+            # Log the full job_info when SUCCEEDED to confirm structure
+            print(f"🔍 Full job_info for SUCCEEDED job {job_id} in /job_status:")
+            print(json.dumps(job_info, indent=2))
+
+            if outputs and isinstance(outputs, dict) and len(outputs) > 0: # Check if outputs is a non-empty dictionary
                 response_data["outputs"] = outputs
                 response_data["message"] = "Job completed successfully with outputs."
             else:
-                response_data["message"] = "Job completed successfully, but no outputs were found in the result."
-                response_data["outputs"] = None # Explicitly state no outputs
+                response_data["message"] = "Job completed successfully, but no output stems were found in the result field."
+                response_data["outputs"] = None 
         elif status == "FAILED":
             error_detail = job_info.get("result", {}).get("error", "Job failed without specific error details.")
             response_data["error_details"] = str(error_detail)
@@ -130,34 +115,22 @@ def get_job_status(job_id):
         return jsonify(response_data)
 
     except Exception as e:
-        # This could be an SDK error if the job_id is invalid or API key is wrong for get_job
         print(f"💥 Error checking job status for {job_id}: {e}")
         traceback.print_exc()
-        # Check if e has a status_code attribute (like from requests.exceptions.HTTPError)
-        # or if it's a specific SDK error with more info.
         error_message = f"An error occurred while checking job status: {str(e)}"
         status_code = 500
-        # if hasattr(e, 'response') and e.response is not None:
-        #     status_code = e.response.status_code
-        #     try:
-        #         error_message = e.response.json().get('message', error_message)
-        #     except ValueError: # Not JSON
-        #         pass
         return jsonify({"error": error_message, "job_id": job_id}), status_code
 
 
 @app.route('/results/<job_id>')
 def show_results(job_id):
-    # This route assumes the client has already confirmed the job is SUCCEEDED
-    # and has the outputs. For simplicity, it could re-fetch or expect outputs to be passed.
-    # For this version, we'll re-fetch to ensure data integrity.
-    # Similar API key consideration as in /job_status
     api_key = request.args.get('api_key')
     if not api_key:
         api_key = os.environ.get('MUSIC_AI_APP_API_KEY')
 
     if not api_key:
-        return "API Key required to view results", 400 # Or render an error template
+        return render_template('result.html', stems=None, job_status="ERROR_FETCHING_RESULTS", job_id=job_id, error_info="API Key required to view results")
+
 
     client = MusicAiClient(api_key=api_key)
     try:
@@ -165,17 +138,22 @@ def show_results(job_id):
         job_info = client.get_job(job_id=job_id)
         status = job_info.get('status')
 
+        # Log the full job_info when fetching for results page
+        print(f"🔍 Full job_info for results page {job_id} (Status: {status}):")
+        print(json.dumps(job_info, indent=2))
+
         if status == "SUCCEEDED":
-            outputs = job_info.get("result", {}).get("outputs")
-            if outputs:
-                return render_template('result.html', stems=outputs, job_status=status, job_id=job_id)
+            # CORRECTED LINE: Get the 'result' object directly
+            outputs = job_info.get("result")
+            
+            if outputs and isinstance(outputs, dict) and len(outputs) > 0: # Check if outputs is a non-empty dictionary
+                return render_template('result.html', stems=outputs, job_status=status, job_id=job_id, error_info=None)
             else:
-                # Render result.html with a message that job succeeded but no outputs
-                return render_template('result.html', stems=None, job_status="SUCCEEDED_NO_OUTPUTS", job_id=job_id, error_info="Job succeeded, but no output stems were found.")
+                return render_template('result.html', stems=None, job_status="SUCCEEDED_NO_OUTPUTS", job_id=job_id, error_info="Job succeeded, but no output stems were found in the result field. The workflow might not have generated any for this input.")
         elif status == "FAILED":
             error_detail = job_info.get("result", {}).get("error", "Job failed.")
             return render_template('result.html', stems=None, job_status=status, job_id=job_id, error_info=str(error_detail))
-        else: # Still processing or other states
+        else: 
             return render_template('result.html', stems=None, job_status=status, job_id=job_id, error_info="Job is not yet complete or in an unknown state.")
 
     except Exception as e:
