@@ -69,20 +69,14 @@ body {
   }
   
   .social-links a {
-    color: #007bff; /* Blue color for links */
+    color: #002fff; /* Blue color for links */
     text-decoration: none; /* Remove underline */
   }
   
   .social-links a:hover {
     text-decoration: underline; /* Underline on hover */
   }
-  
-  .logo {
-   /* width: 100%;*/
-    max-width: 80%;
-    margin-bottom: 15px;
-  }
-  
+   
 h1 {
   font-size: 3.5rem;
   margin-bottom: 25px;
@@ -154,3 +148,46 @@ button:hover {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+    .error-message {
+        color: #c0392b; /* Red for errors */
+        font-weight: bold;
+    }
+    .success-message {
+        color: #27ae60; /* Green for success */
+        font-weight: bold;
+    }
+    /* Ensure form elements are stacked nicely on smaller screens */
+    form input[type="text"], form input[type="file"], form button {
+        display: block;
+       /* width: calc(100% - 22px); /* Full width minus padding/border */
+        width: 100%;
+        box-sizing: border-box;
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+    form button {
+        background-color: #3498db;
+        color: white;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+    form button:hover {
+        background-color: #2980b9;
+    }
+    .logo {
+      display: block;
+      margin: 20px auto;
+      max-width: 80%; /* Adjust as needed */
+      height: auto;
+    }
+    .container { /* Added a container for better centering and responsiveness */
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }

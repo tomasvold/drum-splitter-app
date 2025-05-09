@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>AI Drum Stem Separator Result</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"> <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <style>
+  <!-- <style>
     body { font-family: 'Open Sans', sans-serif; margin: 0; padding: 0; background-color: #f4f7f6; color: #333; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
     .container { background-color: #fff; padding: 20px 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; max-width: 700px; width: 90%; }
     h1 { color: #2c3e50; margin-bottom: 20px; }
@@ -29,7 +29,150 @@
     .success-message { color: #27ae60; font-weight: bold; border-left: 3px solid #27ae60; padding-left: 10px; background-color: #eafaf1;}
     .info-message { color: #2980b9; border-left: 3px solid #2980b9; padding-left: 10px; background-color: #ebf5fb;}
     .message-box { padding: 10px; border-radius: 5px; margin-bottom: 15px; }
+  </style> -->
+
+  <style>
+    body {
+      font-family: 'Open Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f7f6;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background-color: #fff;
+      padding: 20px 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      text-align: center; /* This centers inline-block children and text within block children */
+      max-width: 700px;
+      width: 90%;
+    }
+
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+
+    /* General paragraph styling within the container */
+    .container > p { /* Targeting direct <p> children of .container for general centering */
+      line-height: 1.6;
+      margin-bottom: 15px; /* Adjusted margin */
+      /* text-align: center; is inherited */
+    }
+    
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    /* Styling for each stem item box */
+    li {
+      background-color: #ecf0f1;
+      margin: 15px 0; /* Slightly increased vertical margin */
+      padding: 15px 20px; /* Adjusted padding */
+      border-radius: 8px; /* Slightly larger radius */
+      display: flex;
+      flex-direction: column;
+      align-items: center; /* Center title and the player-controls div */
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    li strong {
+      /* margin-bottom: 12px; /* Increased spacing below title */
+      font-size: 1.15em; /* Slightly larger title */
+      color: #34495e;
+      font-weight: 600; /* Bolder title */
+    }
+
+    /* Wrapper for audio player and its download button */
+    .stem-player-controls {
+      display: flex;
+      flex-direction: row; /* Arrange audio and button side-by-side */
+      align-items: center; /* Vertically align audio and button */
+      justify-content: space-between; /* Puts space, or use gap */
+      width: 100%;
+      max-width: 550px; /* Adjust as needed */
+      margin-top: 5px; /* Space below the stem title */
+      /* gap: 15px; */ /* Alternative for spacing if justify-content isn't ideal */
+    }
+
+    audio {
+      flex-grow: 1; /* Allow audio to take available space */
+      min-width: 200px; /* Ensure audio player doesn't get too small */
+      max-width: 100%; /* Allow it to shrink if container is small */
+      margin-bottom: 0;
+      margin-right: 15px; /* Space between audio and button */
+    }
+
+    a.button-like { /* General style for button-like links */
+      display: inline-block;
+      padding: 10px 20px; /* Adjusted padding */
+      margin-top: 10px; /* General top margin */
+      background-color: #3498db;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+      font-weight: bold;
+      font-size: 1em; /* Standardized font size */
+      border: none;
+      cursor: pointer;
+    }
+    a.button-like:hover {
+      background-color: #2980b9;
+      transform: translateY(-1px); /* Slight lift on hover */
+    }
+
+    /* Specific for download buttons next to stems */
+    a.button-like.download-stem-button {
+      padding: 8px 12px; /* More compact padding */
+      margin-top: 0; /* Reset top margin as it's inline with audio */
+      font-size: 0.9em;
+      white-space: nowrap;
+      flex-shrink: 0; /* Prevent button from shrinking excessively */
+    }
+    
+    /* Message box styling */
+    .message-box {
+      padding: 12px 15px; /* Adjusted padding */
+      border-radius: 5px;
+      margin-bottom: 20px; /* Increased margin */
+      text-align: center; /* Ensure text inside is centered */
+      /* For centering the box itself if it's not full width: */
+      /* display: inline-block; */ /* Uncomment if you want box to shrink-wrap */
+      /* max-width: 90%; */    /* Uncomment to limit width if inline-block */
+    }
+
+    .error-message {
+      color: #c0392b;
+      font-weight: bold;
+      border-left: 4px solid #c0392b; /* Thicker border */
+      background-color: #fdecea;
+    }
+
+    .success-message {
+      color: #27ae60;
+      font-weight: bold;
+      border-left: 4px solid #27ae60; /* Thicker border */
+      background-color: #eafaf1;
+    }
+
+    .info-message {
+      color: #2980b9;
+      font-weight: normal; /* Normal weight for info */
+      border-left: 4px solid #2980b9; /* Thicker border */
+      background-color: #ebf5fb;
+    }
+
   </style>
+
+
 </head>
 <body>
   <div class="container">
@@ -43,8 +186,9 @@
         {% for stem_key, url in stems.items() %}
           <li>
             <strong>{{ stem_key.replace('_', ' ').title() }}:</strong>
-            <audio controls src="{{ url }}"></audio>
+            <div class="stem-player-controls"><audio controls src="{{ url }}"></audio>
             <a href="{{ url }}" download class="button-like">⬇ Download {{ stem_key.replace('_', ' ').title() }}</a>
+            </div>
           </li>
         {% else %}
           {# This 'else' for the for-loop handles if stems is an empty dictionary #}
