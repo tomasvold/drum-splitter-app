@@ -45,11 +45,10 @@ def upload_file_and_create_job():
         file_url = client.upload_file(file_path=temp_file_path)
         print(f"✅ File uploaded successfully: {file_url}")
 
-        print(f"⚙️ Creating job with workflow: {workflow}...")
-        job_creation_info = client.create_job(
-            job_name=f"Drum Stem Separation - {filename}",
-            workflow_id=workflow,
-            params={"inputUrl": file_url}
+        job_creation_info = client.jobs.create(  # not client.create_job
+        job_name=f"Drum Stem Separation - {filename}",
+        workflow_id=workflow,
+        params={"inputUrl": file_url}
         )
         job_id = job_creation_info.get('id')
         if not job_id:
