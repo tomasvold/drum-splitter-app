@@ -34,7 +34,7 @@
   <style>
     body {
       font-family: 'Open Sans', sans-serif;
-      margin: 0;
+      margin: 0; 
       padding: 0;
       background-color: #f4f7f6;
       color: #333;
@@ -179,7 +179,8 @@
     <h1>Separation Result</h1>
 
     {% if job_status == "SUCCEEDED" and stems %}
-      {# This is the ideal case: job succeeded and we have stems #}
+      <a href="{{ url_for('download_all', job_id=job_id) }}?api_key={{ request.args.get('api_key') }}"
+        class="button-like">⬇ Download All Stems (ZIP)</a>
       <p class="message-box success-message">Separation Complete! 🎉</p>
       <p>Click a stem below to listen or download:</p>
       <ul>

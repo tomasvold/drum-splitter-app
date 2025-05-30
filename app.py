@@ -5,6 +5,10 @@ from dotenv import load_dotenv
 from musicai_sdk import MusicAiClient
 from werkzeug.utils import secure_filename
 import traceback # For detailed error logging
+import zipfile
+import requests
+from io import BytesIO
+from flask import send_file
 
 load_dotenv()
 
@@ -121,6 +125,32 @@ def get_job_status(job_id):
         status_code = 500
         return jsonify({"error": error_message, "job_id": job_id}), status_code
 
+@app.route('/download_all/<job_id>')
+def download_all(job_id):
+    api_key = request.args.get('api_key')
+    if not api_key:
+        return "Missing API key", 400
+
+    client = MusicAiClient(api_key=api_key)
+    job_info = client.get_job(job_id=job_id)
+    outputs = job_info.get("result", {})
+
+    if not outputs:
+        return "No stems found", 404
+
+    memory_file = BytesIO()
+    with zipfile.ZipFile(memory_file, 'w') as zipf:
+        for filename, url in outputs.items():
+            response = requests.get(url)
+            if response.status_code == 200:
+                # Add original file (from Music.AI) to the zip
+                zipf.writestr(filename, response.content)
+
+    memory_file.seek(0)
+    return send_file(memory_file,
+                     download_name=f"{job_id}_drum_stems.zip",
+                     as_attachment=True,
+                     mimetype='application/zip')
 
 @app.route('/results/<job_id>')
 def show_results(job_id):
