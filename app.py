@@ -1,9 +1,13 @@
 import os
 import json
-from flask import Flask, request, render_template, jsonify # Added jsonify
+from flask import Flask, request, render_template, jsonify
 from dotenv import load_dotenv
-from musicai_sdk import MusicAiClient
-print(f"MUSICAI_SDK_VERSION: {musicai_sdk.__version__}") # Or the correct attribute for version
+
+import musicai_sdk  # <--- First, import the package itself
+from musicai_sdk import MusicAiClient # <--- Then, you can import specific classes/functions from it
+# Now that 'musicai_sdk' is imported as a module, you can access its __version__
+print(f"MUSICAI_SDK_VERSION: {musicai_sdk.__version__}")
+
 from werkzeug.utils import secure_filename
 import traceback # For detailed error logging
 
