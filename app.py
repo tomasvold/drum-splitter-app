@@ -29,7 +29,7 @@ def upload_file_and_create_job():
         return jsonify({"error": "Missing API key or workflow"}), 400
 
     client = MusicAiClient(api_key=api_key)
-
+    print(f"DEBUG: dir(client) is {dir(client)}", flush=True)  # <--- ADD THIS LINE
     file = request.files.get('audio')
     if not file or file.filename == '':
         return jsonify({"error": "No file uploaded or file has no name"}), 400
@@ -44,7 +44,7 @@ def upload_file_and_create_job():
         file_url = client.upload_file(file_path=temp_file_path)
         print(f"✅ File uploaded successfully: {file_url}")
 
-        job_creation_info = client.jobs.create(  # not client.create_job
+        job_creation_info = client.create_job(  # not client.create_job
         job_name=f"Drum Stem Separation - {filename}",
         workflow_id=workflow,
         params={"inputUrl": file_url}
