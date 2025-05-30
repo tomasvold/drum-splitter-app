@@ -10,9 +10,25 @@
 <body>
   <div class="container">
     <img src="{{ url_for('static', filename='Logo.png') }}" alt="Drum Splitter Logo" class="logo">
-    <p>Upload your stereo drum track and let our AI split it into individual stems (kick, snare, toms, cymbals, hihat).</p>
-    
-    <form id="uploadForm"> <b>Enter credentials</b>:
+    <p>Upload your stereo drum recording and create individual stems (kick, snare, toms, cymbals, hi-hat).</p>
+    <p style="font-size: 0.9em; color: gray;">
+      Powered by <a href="https://music.ai" target="_blank">Music.AI</a> — industry-leading AI for music processing.
+    </p>
+
+    <form id="uploadForm"><b>Enter credentials</b>:
+      <details>
+        <summary><strong>📘 How to set up your Music.AI account</strong></summary>
+        <ol>
+          <li>Sign up at <a href="https://music.ai/" target="_blank">Music.AI</a></li>
+          <li>Create a new workflow and search for the <strong>“Isolate Drums”</strong>template</li>
+          <li>Click "Add New output" and map the remaining drum stems (toms, hi-hat, cymbals) to the Output module (do not use "Other")</li>
+          <li>Click 'Edit metadata' and note the "Slug" - Click Save</li>
+          <li>Find your API key under <strong>Settings</strong></li>
+          <li>Paste your API key and Slug below to start processing!</li>
+        </ol>
+        <p>📺 <a href="https://yourvideo.com" target="_blank">or watch this video for instructions</a></p>
+    </details>
+
       <input type="text" name="api_key" id="api_key" placeholder="Enter your API key" required>
       <input type="text" name="workflow" id="workflow" placeholder="Enter your Workflow slug" required>
       <p></p>
@@ -25,8 +41,12 @@
   </div>
 
   <footer>
+    <p style="font-size: 0.9em; color: gray;">
+      🔧 This tool uses <a href="https://music.ai/" target="_blank">Music.AI</a>, an industry-leading stem separation service. 
+      Your Music.ai account will be charged approximately <strong>$0.15 per minute</strong> of audio processed.
+    </p>
     <p>
-      Created by Tom Åsvold 2025, Los Angeles CA<br>
+      This website is created by Tom Åsvold 2025, Los Angeles CA<br>
       <span class="social-links">
         <a href="https://www.instagram.com/tomasvold" target="_blank">Instagram</a> | 
         <a href="https://www.facebook.com/tomasvold" target="_blank">Facebook</a> | 
