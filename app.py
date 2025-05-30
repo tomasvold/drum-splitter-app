@@ -46,7 +46,7 @@ def upload_file_and_create_job():
 
         job_creation_info = client.add_job(
         job_name=f"Drum Stem Separation - {filename}",
-        workflow_id=workflow,
+        workflow_slug=workflow,
         params={"inputUrl": file_url}
         )
         job_id = job_creation_info.get('id')
