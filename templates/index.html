@@ -11,21 +11,18 @@
   <div class="container">
     <img src="{{ url_for('static', filename='Logo.png') }}" alt="Drum Splitter Logo" class="logo">
     <p>Upload your stereo drum recording and create individual stems (kick, snare, toms, cymbals, hi-hat).</p>
-    <p class="powered-by">
-      Powered by <a href="https://music.ai" target="_blank" rel="noopener noreferrer">Music.AI</a> — industry-leading AI for music processing.
-    </p>
-
-    <form id="uploadForm"><b>Enter credentials</b>:
+    <p><small>Powered by <a href="https://music.ai" target="_blank" rel="noopener noreferrer">Music.AI</a> — industry-leading AI for music processing.</small></p>
+    <form id="uploadForm"><b>Enter credentials from your Music.AI account below:</b>
       <details>
-        <summary><strong>📘 How to set up your Music.AI account</strong></summary>
-        <ol>
-          <li>Sign up at <a href="https://music.ai/" target="_blank">Music.AI</a></li>
-          <li>Create a new workflow and search for the <strong>“Isolate Drums”</strong>template</li>
+        <summary><strong>Click here for instructions on how to retrieve your Music.AI credentials</strong></summary>
+        <ul>
+          <li>Click here to create your <a href="https://music.ai/" target="_blank">Music.AI account</a></li>
+          <li>Create a new workflow and use the “Isolate Drums” template</li>
           <li>Click "Add New output" and map the remaining drum stems (toms, hi-hat, cymbals) to the Output module (do not use "Other")</li>
           <li>Click 'Edit metadata' and note the "Slug" - Click Save</li>
-          <li>Find your API key under <strong>Settings</strong></li>
+          <li>Find your API key under Settings</li>
           <li>Paste your API key and Slug below to start processing!</li>
-        </ol>
+        </ul>
         <p>📺 <a href="https://yourvideo.com" target="_blank">or watch this video for instructions</a></p>
     </details>
 
