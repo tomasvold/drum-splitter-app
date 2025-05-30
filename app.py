@@ -3,6 +3,7 @@ import json
 from flask import Flask, request, render_template, jsonify # Added jsonify
 from dotenv import load_dotenv
 from musicai_sdk import MusicAiClient
+print(f"MUSICAI_SDK_VERSION: {musicai_sdk.__version__}") # Or the correct attribute for version
 from werkzeug.utils import secure_filename
 import traceback # For detailed error logging
 
