@@ -12,28 +12,12 @@
     <img src="{{ url_for('static', filename='Logo.png') }}" alt="Drum Splitter Logo" class="logo">
     <p>Upload your stereo drum recording and create individual stems (kick, snare, toms, cymbals, hi-hat).</p>
     <p><small>Powered by <a href="https://music.ai" target="_blank" rel="noopener noreferrer">Music.AI</a> — industry-leading AI for music processing.</small></p>
-    <form id="uploadForm"><h4>Enter credentials from your Music.AI account below:</h4>
-    </br>
-      <details>
-        <summary>Click here for instructions on retrieving credentials</summary>
-        <ul>
-          <li>1.Click here to create your&nbsp;<a href="https://music.ai/" target="_blank">Music.AI account</a></li>
-          <li>2.Create a new workflow and use the “Isolate Drums” template</li>
-          <li>3."Add New output" and map Toms, Hi-hat, Cymbals to Output</li>
-          <li>4.Click 'Edit metadata' and note the "Slug" - Click Save</li>
-          <li>5.Find your API key under Settings</li>
-          <li>6.Paste your API key and Slug below to start processing!</li>
-        </ul>
-    </details>
-
-      <input type="text" name="api_key" id="api_key" placeholder="Enter your API key" required>
-      <input type="text" name="workflow" id="workflow" placeholder="Enter your Workflow slug" required>
-      <p></p>
-      <input type="file" name="audio" id="audio_file" required>
+    <form id="uploadForm">
+      <div class="file-input-wrapper">
+          <input type="file" name="audio" id="audio_file" required>
+      </div>
       <button type="submit">Upload and Split</button>
-    </form>
-
-    <div class="spinner" id="spinner"></div>
+    </form> <div class="spinner" id="spinner"></div>
     <div class="message" id="messageArea">Please select a drum track to upload..</div>
   </div>
 
@@ -50,43 +34,28 @@
       </span>
     </p>
   </footer>
-
-  <script>
+<script>
     const uploadForm = document.getElementById('uploadForm');
     const spinner = document.getElementById('spinner');
     const messageArea = document.getElementById('messageArea');
-    const apiKeyInput = document.getElementById('api_key'); // Get API key input
     
-    let pollingInterval; // To store the interval ID for polling
+    let pollingInterval;
 
-    // Function to update messages shown to the user
     function showMessage(text, type = 'info') {
         messageArea.innerText = text;
-        messageArea.className = 'message'; // Reset class
-        if (type === 'error') {
-            messageArea.classList.add('error-message');
-        } else if (type === 'success') {
-            messageArea.classList.add('success-message');
-        }
+        messageArea.className = 'message';
+        if (type === 'error') messageArea.classList.add('error-message');
+        else if (type === 'success') messageArea.classList.add('success-message');
     }
 
     uploadForm.addEventListener('submit', async (event) => {
-      event.preventDefault(); // Prevent default form submission
+      event.preventDefault();
 
       spinner.style.display = 'block';
       showMessage('🚀 Uploading file and creating job...', 'info');
       uploadForm.querySelector('button[type="submit"]').disabled = true;
 
-
       const formData = new FormData(uploadForm);
-      const userApiKey = formData.get('api_key'); // Get API key for later use in polling
-
-      if (!userApiKey) {
-          showMessage('API Key is required!', 'error');
-          spinner.style.display = 'none';
-          uploadForm.querySelector('button[type="submit"]').disabled = false;
-          return;
-      }
 
       try {
         const response = await fetch("{{ url_for('upload_file_and_create_job') }}", {
@@ -96,81 +65,53 @@
 
         const data = await response.json();
 
-        if (!response.ok) {
-          // Handle HTTP errors from the /upload endpoint
-          throw new Error(data.error || `Server error: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(data.error || `Server error: ${response.status}`);
 
         if (data.job_id) {
-          showMessage(`⏳ Job created (ID: ${data.job_id}). Now polling for status...`, 'info');
-          pollJobStatus(data.job_id, userApiKey); // Pass userApiKey to polling function
-        } else {
-          throw new Error(data.error || 'Failed to create job: No Job ID received.');
+          showMessage(`⏳ Job created (ID: ${data.job_id}). Processing...`, 'info');
+          pollJobStatus(data.job_id); // No API key passed here anymore
         }
       } catch (error) {
-        console.error('Upload error:', error);
         showMessage(`Error: ${error.message}`, 'error');
         spinner.style.display = 'none';
         uploadForm.querySelector('button[type="submit"]').disabled = false;
       }
     });
 
-    async function pollJobStatus(jobId, apiKeyForPolling) {
-      // Clear any existing polling interval
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-      }
+    async function pollJobStatus(jobId) {
+      if (pollingInterval) clearInterval(pollingInterval);
 
       pollingInterval = setInterval(async () => {
         try {
-          // Construct the URL for job status, including the API key as a query parameter
-          const statusUrl = `{{ url_for('get_job_status', job_id='JOB_ID_PLACEHOLDER') }}`.replace('JOB_ID_PLACEHOLDER', jobId) + `?api_key=${encodeURIComponent(apiKeyForPolling)}`;
+          // Clean URL: No more ?api_key= at the end
+          const statusUrl = `{{ url_for('get_job_status', job_id='JOB_ID_PLACEHOLDER') }}`.replace('JOB_ID_PLACEHOLDER', jobId);
           
           const response = await fetch(statusUrl);
           const data = await response.json();
 
-          if (!response.ok) {
-            // Handle HTTP errors from the /job_status endpoint
-            throw new Error(data.error || `Server error checking status: ${response.status}`);
-          }
+          if (!response.ok) throw new Error(data.error || 'Error checking status');
           
-          showMessage(`⏳ Job Status (${jobId}): ${data.status || 'Unknown'}`, 'info');
-
           if (data.status === 'SUCCEEDED') {
             clearInterval(pollingInterval);
             spinner.style.display = 'none';
-            uploadForm.querySelector('button[type="submit"]').disabled = false;
-            if (data.outputs) {
-              showMessage('🎉 Job completed successfully! Redirecting to results...', 'success');
-              // Redirect to the results page, passing the API key
-              window.location.href = `{{ url_for('show_results', job_id='JOB_ID_PLACEHOLDER') }}`.replace('JOB_ID_PLACEHOLDER', jobId) + `?api_key=${encodeURIComponent(apiKeyForPolling)}`;
-            } else {
-              showMessage('✅ Job completed, but no output stems were found. Please check the workflow or input file.', 'info');
-              // Optionally, redirect to a results page that can display this message
-               window.location.href = `{{ url_for('show_results', job_id='JOB_ID_PLACEHOLDER') }}`.replace('JOB_ID_PLACEHOLDER', jobId) + `?api_key=${encodeURIComponent(apiKeyForPolling)}`;
-            }
+            showMessage('🎉 Job completed! Redirecting...', 'success');
+            // Clean Redirect: No more ?api_key= at the end
+            window.location.href = `{{ url_for('show_results', job_id='JOB_ID_PLACEHOLDER') }}`.replace('JOB_ID_PLACEHOLDER', jobId);
           } else if (data.status === 'FAILED') {
             clearInterval(pollingInterval);
             spinner.style.display = 'none';
             uploadForm.querySelector('button[type="submit"]').disabled = false;
-            showMessage(`❌ Job failed: ${data.error_details || data.message || 'Unknown error'}`, 'error');
-          } else if (data.status === 'QUEUED' || data.status === 'STARTED') {
-            // Continue polling
-            showMessage(`⏳ Job processing... Status: ${data.status}`, 'info');
-          } else if (!data.status) {
-             // Unknown status or error in response
-             console.warn("Received unexpected job status data:", data);
+            showMessage(`❌ Job failed: ${data.error_details || 'Unknown error'}`, 'error');
+          } else {
+            showMessage(`⏳ Status: ${data.status}`, 'info');
           }
-
         } catch (error) {
-          console.error('Polling error:', error);
-          showMessage(`Error polling job status: ${error.message}`, 'error');
-          clearInterval(pollingInterval); // Stop polling on error
+          clearInterval(pollingInterval);
           spinner.style.display = 'none';
-          uploadForm.querySelector('button[type="submit"]').disabled = false;
         }
-      }, 5000); // Poll every 5 seconds (adjust as needed)
+      }, 5000);
     }
   </script>
+  
 </body>
 </html>
