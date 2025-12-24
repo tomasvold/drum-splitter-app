@@ -10,6 +10,19 @@ load_dotenv()
 
 app = Flask(__name__)
 
+# --- NEW SECURITY ADDITIONS ---
+# 1. Limit file size to 50MB to prevent server crashes
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
+
+# 2. Define exactly which files are allowed
+ALLOWED_EXTENSIONS = {'mp3', 'wav', 'flac'}
+
+def allowed_file(filename):
+    # This checks if there is a '.' and if the extension is in our list
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+# --- END SECURITY ADDITIONS ---
+
 # Ensure a temporary upload directory exists
 TEMP_UPLOAD_DIR = "temp_uploads"
 if not os.path.exists(TEMP_UPLOAD_DIR):
@@ -32,6 +45,11 @@ def upload_file_and_create_job():
     file = request.files.get('audio')
     if not file or file.filename == '':
         return jsonify({"error": "No file uploaded"}), 400
+    
+    # --- NEW CHECK STARTS HERE ---
+    if not allowed_file(file.filename):
+        return jsonify({"error": "File type not allowed. Please upload .mp3, .wav, or .flac files."}), 400
+    # --- NEW CHECK ENDS HERE ---
 
     filename = secure_filename(file.filename)
     temp_file_path = os.path.join(TEMP_UPLOAD_DIR, filename)
